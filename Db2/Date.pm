@@ -8,7 +8,7 @@ our @EXPORT = qw(db2parsedate db2strftime);
 
 sub db2parsedate ($) {
   my $s = shift;
-  my $microSec = int(substr($s,20,6)) / 1000000;
+  my $microSec = int(substr($s,20,6));
   my @t = (
     int(substr($s,17, 2)),
     int(substr($s,14, 2)),
@@ -17,12 +17,11 @@ sub db2parsedate ($) {
     int(substr($s, 5, 2)) -1,
     int(substr($s, 0, 4)) - 1900
   );
-  return timelocal(@t) + $microSec;
+  return sprintf("%d.%06d", timelocal(@t), $microSec);
 }
 sub db2strftime ($;$) {
   my ($time, $fmt) = @_;
-  my $epoch = floor($time);
-  my $microSec = sprintf("%06d", ($time - $epoch) * 1000000);
+  my ($epoch, $microSec) = split(/\./, $time, 2);
   if ($fmt) {
     $fmt =~ s/(?<!%)%f/$microSec/g;
     return strftime($fmt, localtime($epoch));
