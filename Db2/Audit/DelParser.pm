@@ -23,7 +23,6 @@ sub new {
     _rawRecordIterator => undef,
     currentRecord => undef,
     currentRecordCount => 0,
-    closed => 0,
   };
   return bless $self, $class;
 }
@@ -49,16 +48,16 @@ sub open {
     $self->{File} = $_[0];
   }
   CORE::open($self->{FH}, "<:raw", $self->{File}) or croak "$!";
-  $self->{closed} = 0;
   return $self->{FH};
 }
 sub close {
   my $self = shift;
   if (defined $self->{FH}) {
     CORE::close($self->{FH}) or croak "$!";
-    $self->{closed} = 1;
     $self->{FH} = undef;
     $self->{_rawRecordIterator} = undef;
+    $self->{currentRecord} = undef;
+    $self->{currentRecordCount} = 0;
   }
 }
 sub header {
@@ -73,11 +72,9 @@ sub _char_iter {
   my $fh = $self->open();
   return sub {
     if ($#data == -1) {
-      return undef if ($self->{closed});
       my $line = <$fh>;
-      @data = unpack("C*", $line);
-      if (eof($fh)) {
-        $self->close();
+      if (defined $line) {
+        @data = unpack("C*", $line);
       }
     }
     return shift @data;
@@ -93,7 +90,6 @@ sub rawRecordIterator {
   my $iter = $self->{_rawRecordIterator} = sub {
     my $mode = MODE_NORMAL;
     my $record = $self->{currentRecord} = [];
-    $self->{currentRecordCount} = ++$count;
     my $buf = [];
     while (defined(my $c = $chrIter->())) {
       if ($mode == MODE_NORMAL) {
@@ -130,8 +126,11 @@ sub rawRecordIterator {
     }
     push(@$record, pack("C*", @$buf)) if (scalar @$buf > 0);
 
-    return $record if (scalar @$record > 0);
-    return $self->{_rawRecordIterator} = undef;
+    if (scalar @$record > 0) {
+      $self->{currentRecordCount} = ++$count;
+      return $record;
+    }
+    return undef;
   };
   return $iter;
 }
@@ -152,8 +151,7 @@ sub getNext () {
   my $recordIterator = $self->rawRecordIterator();
   my $rawRecord = $recordIterator->();
 
-  return undef unless (defined($rawRecord));
-  return $recordPkg->new(@$rawRecord);
+  return defined $rawRecord ? $recordPkg->new(@$rawRecord) : undef;
 }
 
 1;
