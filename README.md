@@ -36,3 +36,20 @@ foreach my $file (@ARGV) {
 }
 ```
 
+## example) get SQL Statement
+```perl
+my $csv = new Db2::Audit::DelParser(File => "$dir/execute.del", Package => 'Db2::Audit::Execute');
+$csv->process(sub {
+  my ($rec, $c) = @_;
+  my $statement = $rec->getStatementTextFromLob($dir);
+  if ($statement) {
+    printf("%s %s\n", $rec->getTimestamp(), $statement);
+  }
+  my $paramValue = $rec->getStatementValueDataFromLob($dir);
+  if ($paramValue) {
+    printf("Index:%2d Type:%s Value:`%s'\n",
+      $rec->getStatementValueIndex(), $rec->getStatementValueType(), $paramValue);
+  }
+});
+```
+
