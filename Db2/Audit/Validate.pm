@@ -12,6 +12,7 @@ BEGIN {
     { name => "Database" },
     { name => "User ID" },
     { name => "Authorization ID" },
+    { name => "Execution ID" },
     { name => "Origin Node Number",      type => "int" },
     { name => "Coordinator Node Number", type => "int" },
     { name => "Application ID" },
@@ -32,7 +33,6 @@ BEGIN {
     { name => "Connection Trust Type" },
     { name => "Role Inherited" },
     { name => "Original User ID" },
-    { name => "Event Details" },
     { name => "Instance Name" },
     { name => "Hostname" },
   );
