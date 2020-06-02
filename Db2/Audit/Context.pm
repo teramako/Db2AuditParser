@@ -36,6 +36,14 @@ BEGIN {
   Db2::Audit::RecordBase->init(@COLUMNS);
 }
 
+sub getStatementTextFromLob ($) {
+  my ($self, $dir) = @_;
+  my $lob = $self->getStatementText();
+  if ($lob) {
+    return $self->getDataFromLob($lob, $dir);
+  }
+}
+
 1;
 __END__
 

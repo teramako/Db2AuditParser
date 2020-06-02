@@ -83,6 +83,29 @@ sub getAll () {
   return @values;
 }
 
+sub getDataFromLob ($;$) {
+  my ($self, $lob, $dir) = @_;
+  my ($file, $offset, $length) = _parseLob($lob, $dir);
+  $file = $dir . "/" . $file if ($dir);
+  unless ($file and -f $file) {
+    carp "Lob file is not found: $file";
+    return "";
+  }
+  CORE::open(my $fh, "<:raw :bytes", $file) or die "$!";
+  CORE::seek($fh, $offset, 0);
+  CORE::read($fh, my $lobData, $length);
+  CORE::close($fh) or die "$!";
+  return $lobData;
+}
+sub _parseLob ($) {
+  my $lobString = shift;
+  if ($lobString =~ m/^(.*)\.(\d+)\.(\d+)\/$/) {
+    my ($file, $offset, $length) = ($1, $2, $3);
+    return ($file, $offset, $length);
+  }
+  return undef;
+}
+
 1;
 
 __END__
