@@ -6,7 +6,6 @@ use constant {
   MODE_NON_QUOTE => 1,
   MODE_IN_QUOTE => 2,
   CH_SPACE => 0x20,
-  CH_WQUOTE => 0x22,
   CH_COMMA => 0x2c,
   CH_TAB => 0x09,
   CH_LF => 0x0a,
@@ -19,6 +18,7 @@ sub new {
     FH => $args{Handler} || undef,
     File => $args{File} || undef,
     Package => $args{Package} || 'Db2::Audit::RecordBase',
+    Delimiter => $args{Delimiter} || '"',
     _packageLoaded => 0,
     _rawRecordIterator => undef,
     currentRecord => undef,
@@ -85,6 +85,7 @@ sub rawRecordIterator {
   if (defined $self->{_rawRecordIterator}) {
     return $self->{_rawRecordIterator};
   }
+  my $delm = int($self->{Delimiter}) > 0 ? $self->{Delimiter} : (unpack("C",$self->{Delimiter}))[0];
   my $chrIter = $self->_char_iter();
   my $count = 0;
   my $iter = $self->{_rawRecordIterator} = sub {
@@ -93,7 +94,7 @@ sub rawRecordIterator {
     my $buf = [];
     while (defined(my $c = $chrIter->())) {
       if ($mode == MODE_NORMAL) {
-        if ($c == CH_WQUOTE) {
+        if ($c == $delm) {
           $mode = MODE_IN_QUOTE;
         } elsif ($c == CH_COMMA) {
           push(@$record, pack("C*", @$buf));
@@ -117,7 +118,7 @@ sub rawRecordIterator {
           push(@$buf, $c);
         }
       } else { # $mode == MODE_IN_QUOTE
-        if ($c == CH_WQUOTE) {
+        if ($c == $delm) {
           $mode = MODE_NORMAL;
         } else {
           push(@$buf, $c);
@@ -165,7 +166,10 @@ Db2::Audit::DelParser - parse the Db2 audit del file
 
     use Db2::Audit::DelParser;
 
-    my $csv = new Db2::Audit::DelParser(File => '<file>', Package => 'Db2::Audit::Checking');
+    my $csv = new Db2::Audit::DelParser(
+      File => '<file>',
+      Package => 'Db2::Audit::Checking',
+      Delimiter => '"');
     $csv->process(sub {
       my ($record, $count) = @_;
       print join(",", $reocrd->getAll());
@@ -193,6 +197,10 @@ the target file.
 =item Package
 
 the package for each records.
+
+=item Delimiter
+
+the enclosed character, if omitted C<"> is used.
 
 =back
 
