@@ -60,6 +60,18 @@ __END__
 
 Db2::Audit::Objmaint - db2 audit record for OBJMAINT category
 
+=head1 METHODS
+
+=head2 C<get{ColumnName}>
+
+Returns the value of the column name.
+The metod name is used C<get> prefix and the column name removed white spaces.
+See COLUMNS section for all column names.
+
+example:
+    $record->getTimestamp,
+    $record->getAuditEvent
+
 =head1 COLUMNS
 
 =head2  1: Timestamp
